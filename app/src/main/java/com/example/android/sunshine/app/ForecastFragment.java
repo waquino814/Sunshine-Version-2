@@ -27,12 +27,14 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by wellingtonaquino on 6/22/16.
  */
 public class ForecastFragment extends Fragment {
     private static final String LOG_TAG = ForecastFragment.class.getSimpleName();
+    ArrayAdapter<String> mForecastAdapter = null;
     public ForecastFragment() {
     }
 
@@ -46,17 +48,17 @@ public class ForecastFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-        ArrayList<String> weekForecast = new ArrayList<String>();
+        List<String> weekForecast = new ArrayList<>();
         weekForecast.add("Today - Sunny - 88/63");
         weekForecast.add("Tomorrow - Foggy - 70/46");
         weekForecast.add("Wed - Cloudy - 72/63");
-        weekForecast.add("Thurs - Rainy - 64/51");
+        weekForecast.add( "Thurs - Rainy - 64/51");
         weekForecast.add("Fri - Foggy - 70/46");
         weekForecast.add("Sat - Sunny - 76/68");
-        ArrayAdapter<String> forecastAdapter = new ArrayAdapter<String>(
+        mForecastAdapter = new ArrayAdapter<>(
                 getActivity(),R.layout.list_item_forecast, R.id.list_item_forecast_textview,weekForecast);
         ListView listViewForecast =  (ListView) rootView.findViewById(R.id.listview_forecast);
-        listViewForecast.setAdapter(forecastAdapter);
+        listViewForecast.setAdapter(mForecastAdapter);
         return rootView;
     }
 
@@ -72,7 +74,6 @@ public class ForecastFragment extends Fragment {
             case R.id.action_refresh:
                 FetchWeatherTask fetchWeatherTask = new FetchWeatherTask();
                 fetchWeatherTask.execute("94043");
-                Log.d(LOG_TAG,"the user want to refresh");
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -81,6 +82,18 @@ public class ForecastFragment extends Fragment {
 
     public class FetchWeatherTask extends AsyncTask<String,Void,String[]>{
         private  final String LOG_TAG = FetchWeatherTask.class.getSimpleName();
+
+        @Override
+        protected void onPostExecute(String[] result) {
+            if(result !=null){
+                mForecastAdapter.clear();
+                for (String dayForCastStr: result){
+                    mForecastAdapter.add(dayForCastStr);
+                }
+            }
+
+        }
+
         @Override
         protected String[] doInBackground(String... params) {
             if(params.length ==0){
@@ -123,7 +136,6 @@ public class ForecastFragment extends Fragment {
 
 
                 URL url = new URL(builtUri.toString());
-                Log.d(LOG_TAG,builtUri.toString());
                 // Create the request to OpenWeatherMap, and open the connection
                 urlConnection = (HttpURLConnection) url.openConnection();
                 urlConnection.setRequestMethod("GET");
@@ -150,7 +162,6 @@ public class ForecastFragment extends Fragment {
                     return null;
                 }
                 forecastJsonStr = buffer.toString();
-                Log.d(LOG_TAG,"Forecast JSON in String: "+forecastJsonStr);
             } catch (IOException e) {
                 Log.e(LOG_TAG, "Error ", e);
                 // If the code didn't successfully get the weather data, there's no point in attempting
@@ -267,10 +278,6 @@ public class ForecastFragment extends Fragment {
 
                 highAndLow = formatHighLows(high, low);
                 resultStrs[i] = day + " - " + description + " - " + highAndLow;
-            }
-
-            for (String s : resultStrs) {
-                Log.v(LOG_TAG, "Forecast entry: " + s);
             }
             return resultStrs;
 
